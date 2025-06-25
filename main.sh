@@ -1,32 +1,16 @@
 #!/bin/bash
 
-# Eaglercraft Server
-# Thrown together in a few days by TheCerealist
-# Go love ayun, he gave me the idea.
+# Use Railway's assigned port or default to 8081
+PORT=${PORT:-8081}
 
-unset DISPLAY
-
-echo "set -g mouse on" > ~/.tmux.conf
-
-tmux kill-session -t server
-# Restart Caddyserver, portforwarding 8081 for Eaglercraft.
-cd ./Caddy
-caddy stop
-caddy start --config ./Caddyfile > /dev/null 2>&1
-cd ..
-# Run Cuberite Server
+# Run Cuberite server in background
 cd ./Cuberite
 chmod +x Cuberite
-tmux new -d -s server "./Cuberite"
-cd ..
-# Run Waterfall/Bungeecord
-cd ./Bungee
-tmux splitw -t server -h "java -Xmx128M -Xms128M -jar bungee.jar; tmux kill-session -t server"
-cd ..
+./Cuberite &
 
-while tmux has-session -t server
-do
-  tmux a -t server
-done
+# Run BungeeCord with port from $PORT
+cd ../Bungee
+java -Xmx256M -Xms256M -jar bungee.jar --port $PORT &
 
-caddy stop
+# Wait to keep container running
+wait
